@@ -1,8 +1,10 @@
-{
-  "id": "model_...",
-  "title": "4-Burner Gas Stove",
-  "price": "₹49",
-  "buyUrl": "https://pages.razorpay.com/...",
-  "thumbnail": "images/...",
-  "splatUrl": "splats/Gas_Stove_Asset_Pack.splat"
-}
+[
+  {
+    "id": "model_123",
+    "title": "4-Burner Gas Stove",
+    "price": "₹49",
+    "buyUrl": "...",
+    "thumbnail": "...",
+    "splatUrl": "..."
+  }
+]
