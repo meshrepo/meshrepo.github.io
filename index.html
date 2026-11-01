@@ -4,27 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesh Repository</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --bg: #0f0f11;
+            --card: #1c1c1f;
+            --text: #ffffff;
+            --accent: #3b82f6;
+            --border: #2a2a2e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 2rem; }
+        header { text-align: center; margin-bottom: 3rem; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        p.subtitle { color: #a1a1aa; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-content { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .card-price { font-size: 1.1rem; color: #4ade80; font-weight: bold; margin-bottom: 1.5rem; }
+        
+        .buy-btn {
+            margin-top: auto;
+            display: block;
+            text-align: center;
+            padding: 0.8rem;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .buy-btn:hover { background: #2563eb; }
+    </style>
 </head>
 <body>
+
     <header>
-        <div class="header-container">
-            <h1>Mesh Repository</h1>
-            <p>Usable 3D models for your projects.</p>
-            <a href="https://instagram.com/your_handle" target="_blank" class="ig-link">@your_handle</a>
-        </div>
+        <h1>Mesh Repository</h1>
+        <p class="subtitle">Usable, low-cost 3D assets for environment blockouts and concept art.</p>
     </header>
 
-    <main>
-        <div class="filters">
-            <button class="filter-btn active" data-filter="all">All Assets</button>
-        </div>
+    <div class="grid" id="catalogGrid">
+        <!-- Products will be injected here by JavaScript -->
+    </div>
 
-        <div class="grid" id="product-grid">
-            <!-- Models loaded dynamically by script.js -->
-        </div>
-    </main>
+    <script>
+        // Fetch the catalog data
+        fetch('models.json')
+            .then(response => {
+                if (!response.ok) throw new Error("Catalog not found");
+                return response.json();
+            })
+            .then(models => {
+                const grid = document.getElementById('catalogGrid');
+                grid.innerHTML = ''; // Clear loading state
 
-    <script src="script.js"></script>
+                // Loop through models.json and create cards
+                models.forEach(model => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    card.innerHTML = `
+                        <img src="${model.thumbnail}" alt="${model.title}">
+                        <div class="card-content">
+                            <h2 class="card-title">${model.title}</h2>
+                            <div class="card-price">${model.price}</div>
+                            <a href="${model.buyUrl}" class="buy-btn" target="_blank" rel="noopener noreferrer">Buy Now</a>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            })
+            .catch(error => {
+                document.getElementById('catalogGrid').innerHTML = `<p style="text-align:center; grid-column: 1/-1;">Error loading products: ${error.message}</p>`;
+            });
+    </script>
 </body>
 </html>
