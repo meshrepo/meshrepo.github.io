@@ -1,9 +1,8 @@
-[
-  {
-    "id": "model_1793544504821",
-    "title": "4 Burner Gas Stove",
-    "price": "49",
-    "buyUrl": "https://rzp.io/rzp/En3tG7JC",
-    "thumbnail": "gas_stove_preview.png"
-  }
-]
+{
+  "id": "model_...",
+  "title": "4-Burner Gas Stove",
+  "price": "₹49",
+  "buyUrl": "https://pages.razorpay.com/...",
+  "thumbnail": "images/...",
+  "splatUrl": "splats/Gas_Stove_Asset_Pack.splat"
+}
