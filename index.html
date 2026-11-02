@@ -138,8 +138,10 @@
         }
     </style>
     
+    <!-- Required Three.js Dependency -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.157.0/three.min.js"></script>
     <!-- Verified MK Kellogg Gaussian Splats 3D Viewer CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.umd.js"></script>
 </head>
 <body>
 
@@ -169,7 +171,7 @@
 
     <script>
         let currentModels = [];
-        let currentSplatViewer = null; // Keeps track of active 3D instance for cleanup
+        let currentSplatViewer = null;
 
         fetch('models.json?v=' + Date.now())
             .then(res => res.json())
@@ -233,7 +235,6 @@
 
             document.getElementById('assetModal').style.display = 'flex';
 
-            // INITIALIZE MKKellogg 3D VIEWER
             if (model.splatUrl) {
                 if (window.GaussianSplats3D) {
                     try {
@@ -242,7 +243,7 @@
                             'cameraUp': [0, 1, 0],
                             'initialCameraPosition': [0, 1.2, 2.5],
                             'initialCameraLookAt': [0, 0, 0],
-                            'sharedMemoryForWorkers': false // Ensures broad browser compatibility
+                            'sharedMemoryForWorkers': false 
                         });
                         
                         currentSplatViewer.addSplatScene(model.splatUrl, {
@@ -255,7 +256,7 @@
                         console.error("CRITICAL: The 3D Viewer crashed.", err);
                     }
                 } else {
-                    console.error("CRITICAL: The WebGL Splat script failed to load from the CDN.");
+                    console.error("CRITICAL: The WebGL Splat script failed to load. Check if Three.js is loaded correctly.");
                 }
             }
         }
@@ -265,7 +266,6 @@
             
             document.getElementById('assetModal').style.display = 'none';
             
-            // Clean up the WebGL context properly so the browser doesn't crash on reopen
             if (currentSplatViewer) {
                 try {
                     currentSplatViewer.dispose();
