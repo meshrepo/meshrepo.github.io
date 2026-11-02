@@ -138,10 +138,23 @@
         }
     </style>
     
-    <!-- Required Three.js Dependency -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.157.0/three.min.js"></script>
-    <!-- Verified MK Kellogg Gaussian Splats 3D Viewer CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.umd.js"></script>
+    <!-- Modern ES Module Configuration -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+            "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.module.js"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+        
+        // Expose the loaded modules to the global window so our modal script can use them
+        window.THREE = THREE;
+        window.GaussianSplats3D = GaussianSplats3D;
+    </script>
 </head>
 <body>
 
@@ -236,28 +249,31 @@
             document.getElementById('assetModal').style.display = 'flex';
 
             if (model.splatUrl) {
-                if (window.GaussianSplats3D) {
-                    try {
-                        currentSplatViewer = new GaussianSplats3D.Viewer({
-                            'rootElement': viewerTarget,
-                            'cameraUp': [0, 1, 0],
-                            'initialCameraPosition': [0, 1.2, 2.5],
-                            'initialCameraLookAt': [0, 0, 0],
-                            'sharedMemoryForWorkers': false 
-                        });
-                        
-                        currentSplatViewer.addSplatScene(model.splatUrl, {
-                            'showLoadingUI': false
-                        }).then(() => {
-                            currentSplatViewer.start();
-                            console.log("SUCCESS: 3D Splat Viewer initialized.");
-                        });
-                    } catch (err) {
-                        console.error("CRITICAL: The 3D Viewer crashed.", err);
+                // We use a small timeout to ensure the ES Modules have finished attaching to the window
+                setTimeout(() => {
+                    if (window.GaussianSplats3D) {
+                        try {
+                            currentSplatViewer = new GaussianSplats3D.Viewer({
+                                'rootElement': viewerTarget,
+                                'cameraUp': [0, 1, 0],
+                                'initialCameraPosition': [0, 1.2, 2.5],
+                                'initialCameraLookAt': [0, 0, 0],
+                                'sharedMemoryForWorkers': false 
+                            });
+                            
+                            currentSplatViewer.addSplatScene(model.splatUrl, {
+                                'showLoadingUI': true // Temporarily set to true so you can see it downloading
+                            }).then(() => {
+                                currentSplatViewer.start();
+                                console.log("SUCCESS: 3D Splat Viewer initialized.");
+                            });
+                        } catch (err) {
+                            console.error("CRITICAL: The 3D Viewer crashed.", err);
+                        }
+                    } else {
+                        console.error("CRITICAL: The WebGL Splat script failed to load. Check if Three.js is loaded correctly.");
                     }
-                } else {
-                    console.error("CRITICAL: The WebGL Splat script failed to load. Check if Three.js is loaded correctly.");
-                }
+                }, 100);
             }
         }
 
