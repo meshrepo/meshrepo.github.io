@@ -18,9 +18,10 @@
         h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
         p.subtitle { color: #a1a1aa; }
 
+        /* MAIN GRID */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 2rem;
             max-width: 1200px;
             margin: 0 auto;
@@ -32,47 +33,105 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
         }
-        .viewer-container {
-            position: relative;
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+        .card-img-container {
             width: 100%;
-            height: 280px;
+            height: 220px;
             background: #141417;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
         }
-        /* Thumbnail layer sits in the back */
-        .viewer-fallback-img {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .card-img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            z-index: 1;
+            object-fit: cover;
         }
-        /* 3D viewer layer sits on top */
-        .viewer-splat-target {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .card-content { padding: 1.2rem; text-align: center; }
+        .card-title { font-size: 1.15rem; margin-bottom: 0.5rem; }
+        .card-price { font-size: 1.1rem; color: #4ade80; font-weight: bold; }
+
+        /* MODAL OVERLAY */
+        .modal-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             width: 100%;
-            height: 100%;
-            z-index: 2;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
-        .viewer-splat-target canvas {
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 50%;
+            width: 36px; height: 36px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .close-btn:hover { background: #ef4444; }
+
+        .modal-viewer {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            position: relative;
+        }
+        .modal-viewer canvas {
             width: 100% !important;
             height: 100% !important;
             display: block;
             outline: none;
         }
-        .card-content { padding: 1.2rem; display: flex; flex-direction: column; flex-grow: 1; }
-        .card-title { font-size: 1.15rem; margin-bottom: 0.5rem; }
-        .card-price { font-size: 1.1rem; color: #4ade80; font-weight: bold; margin-bottom: 1.2rem; }
+        .modal-fallback-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0; left: 0;
+        }
 
-        .rzp-button-container {
-            margin-top: auto; 
-            text-align: center; 
-            min-height: 45px;
+        .modal-info {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .modal-text h2 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+        .modal-text .price { font-size: 1.3rem; color: #4ade80; font-weight: bold; }
+        .modal-buy-container { min-width: 160px; text-align: right; }
+
+        @media (max-width: 600px) {
+            .modal-info { flex-direction: column; text-align: center; }
+            .modal-buy-container { text-align: center; width: 100%; margin-top: 1rem; }
+            .modal-viewer { height: 300px; }
         }
     </style>
     <!-- Lightweight WebGL Splat Viewer Engine -->
@@ -87,75 +146,128 @@
 
     <div class="grid" id="catalogGrid"></div>
 
+    <!-- MODAL HTML -->
+    <div class="modal-overlay" id="assetModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeModal(event)">&times;</button>
+            
+            <div class="modal-viewer" id="modalViewerTarget">
+                <!-- 3D Canvas or Fallback Image injected here -->
+            </div>
+            
+            <div class="modal-info">
+                <div class="modal-text">
+                    <h2 id="modalTitle">Asset Title</h2>
+                    <div class="price" id="modalPrice">₹0</div>
+                </div>
+                <div class="modal-buy-container" id="modalBuyBtn">
+                    <!-- Razorpay Button injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentModels = [];
+
+        // 1. Fetch data and build grid
         fetch('models.json')
             .then(res => res.json())
             .then(data => {
                 const grid = document.getElementById('catalogGrid');
                 grid.innerHTML = '';
 
-                let models = Array.isArray(data) ? data : (data.models || data.items || []);
+                currentModels = Array.isArray(data) ? data : (data.models || data.items || []);
 
-                if (!Array.isArray(models) || models.length === 0) {
+                if (!Array.isArray(currentModels) || currentModels.length === 0) {
                     grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: #a1a1aa;">No models found in catalog.</p>';
                     return;
                 }
 
-                models.forEach(model => {
+                currentModels.forEach((model, index) => {
                     const card = document.createElement('div');
                     card.className = 'card';
-                    const targetId = `splat-target-${model.id}`;
                     
-                    // The thumbnail image is now ALWAYS rendered in the back
+                    // Clicking the card opens the overlay
+                    card.onclick = () => openModal(index);
+
+                    // If the thumbnail link is broken, this SVG fallback prevents the card from disappearing completely
+                    const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%233f3f46" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
+
                     card.innerHTML = `
-                        <div class="viewer-container">
-                            <img src="${model.thumbnail}" alt="${model.title}" class="viewer-fallback-img" onerror="this.style.display='none'">
-                            <div class="viewer-splat-target" id="${targetId}"></div>
+                        <div class="card-img-container">
+                            <img src="${model.thumbnail}" class="card-img" alt="${model.title}" onerror="this.src='${fallbackSvg}'; this.style.objectFit='none';">
                         </div>
-                        <div class="card-content" id="content-${model.id}">
+                        <div class="card-content">
                             <h2 class="card-title">${model.title}</h2>
                             <div class="card-price">${model.price}</div>
-                            <div class="rzp-button-container" id="rzp-btn-${model.id}"></div>
                         </div>
                     `;
                     grid.appendChild(card);
-
-                    // Inject the exact Razorpay Button snippet
-                    const btnContainer = document.getElementById(`rzp-btn-${model.id}`);
-                    const btnId = model.buttonId;
-
-                    if (btnId && btnId.startsWith('pl_')) {
-                        const form = document.createElement('form');
-                        const script = document.createElement('script');
-                        script.src = "https://checkout.razorpay.com/v1/payment-button.js";
-                        script.setAttribute("data-payment_button_id", btnId);
-                        script.async = true;
-                        form.appendChild(script);
-                        btnContainer.appendChild(form);
-                    } else {
-                        btnContainer.innerHTML = '<span style="color: #f87171; font-size: 0.9rem;">Payment unavailable</span>';
-                    }
-
-                    // Initialize WebGL Splat viewer for this card on top of the image
-                    if (model.splatUrl && typeof Splat !== 'undefined') {
-                        const container = document.getElementById(targetId);
-                        try {
-                            const viewer = new Splat.Viewer({
-                                target: container,
-                                url: model.splatUrl,
-                                camera: { position: [0, 1.2, 2.5], target: [0, 0, 0] }
-                            });
-                        } catch (err) {
-                            console.error("Failed to load 3D Splat for " + model.title, err);
-                        }
-                    }
                 });
             })
             .catch(err => {
                 console.error("Catalog error:", err);
-                const grid = document.getElementById('catalogGrid');
-                grid.innerHTML = '<p style="text-align:center; color:#f87171; grid-column: 1/-1;">Error loading storefront catalog.</p>';
+                document.getElementById('catalogGrid').innerHTML = '<p style="text-align:center; color:#f87171; grid-column: 1/-1;">Error loading storefront catalog.</p>';
             });
+
+        // 2. Open Modal Logic
+        function openModal(index) {
+            const model = currentModels[index];
+            if (!model) return;
+
+            // Set Text
+            document.getElementById('modalTitle').innerText = model.title;
+            document.getElementById('modalPrice').innerText = model.price;
+
+            // Setup Viewer Target
+            const viewerTarget = document.getElementById('modalViewerTarget');
+            // Clear any previous 3D canvas and inject the thumbnail as a background fallback
+            viewerTarget.innerHTML = `<img src="${model.thumbnail}" class="modal-fallback-img" alt="${model.title}" onerror="this.style.display='none'">`;
+
+            // Initialize 3D Viewer if splat file is present
+            if (model.splatUrl && typeof Splat !== 'undefined') {
+                try {
+                    new Splat.Viewer({
+                        target: viewerTarget,
+                        url: model.splatUrl,
+                        camera: { position: [0, 1.2, 2.5], target: [0, 0, 0] }
+                    });
+                } catch (err) {
+                    console.error("Failed to load 3D Splat: ", err);
+                }
+            }
+
+            // Setup Razorpay Button
+            const btnContainer = document.getElementById('modalBuyBtn');
+            btnContainer.innerHTML = ''; // Clear previous button
+
+            if (model.buttonId && model.buttonId.startsWith('pl_')) {
+                const form = document.createElement('form');
+                const script = document.createElement('script');
+                script.src = "https://checkout.razorpay.com/v1/payment-button.js";
+                script.setAttribute("data-payment_button_id", model.buttonId);
+                script.async = true;
+                form.appendChild(script);
+                btnContainer.appendChild(form);
+            } else {
+                btnContainer.innerHTML = '<span style="color: #f87171;">Payment unavailable</span>';
+            }
+
+            // Show Modal
+            document.getElementById('assetModal').style.display = 'flex';
+        }
+
+        // 3. Close Modal Logic
+        function closeModal(event) {
+            // Prevent closing if they clicked inside the modal content box
+            if (event && event.target.className === 'modal-content') return;
+            
+            document.getElementById('assetModal').style.display = 'none';
+            
+            // Wipe the viewer container to kill the active WebGL process in the background
+            document.getElementById('modalViewerTarget').innerHTML = '';
+        }
     </script>
 </body>
 </html>
