@@ -102,7 +102,6 @@
             background: #000;
             position: relative;
         }
-        /* CRITICAL FIX: Forces the 3D canvas to render on top of the fallback image */
         .modal-viewer canvas {
             position: absolute !important;
             top: 0; left: 0;
@@ -138,8 +137,9 @@
             .modal-viewer { height: 300px; }
         }
     </style>
-    <!-- Lightweight WebGL Splat Viewer Engine -->
-    <script src="https://cdn.jsdelivr.net/npm/@antimatter15/splat@0.0.3/dist/splat.js"></script>
+    
+    <!-- Verified MK Kellogg Gaussian Splats 3D Viewer CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.umd.js"></script>
 </head>
 <body>
 
@@ -155,24 +155,21 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-btn" onclick="closeModal(event)">&times;</button>
             
-            <div class="modal-viewer" id="modalViewerTarget">
-                <!-- 3D Canvas or Fallback Image injected here -->
-            </div>
+            <div class="modal-viewer" id="modalViewerTarget"></div>
             
             <div class="modal-info">
                 <div class="modal-text">
                     <h2 id="modalTitle">Asset Title</h2>
                     <div class="price" id="modalPrice">₹0</div>
                 </div>
-                <div class="modal-buy-container" id="modalBuyBtn">
-                    <!-- Razorpay Button injected here -->
-                </div>
+                <div class="modal-buy-container" id="modalBuyBtn"></div>
             </div>
         </div>
     </div>
 
     <script>
         let currentModels = [];
+        let currentSplatViewer = null; // Keeps track of active 3D instance for cleanup
 
         fetch('models.json?v=' + Date.now())
             .then(res => res.json())
@@ -236,21 +233,26 @@
 
             document.getElementById('assetModal').style.display = 'flex';
 
-            // INITIALIZE 3D VIEWER WITH SMART DIAGNOSTICS
+            // INITIALIZE MKKellogg 3D VIEWER
             if (model.splatUrl) {
-                // Checks for multiple common variable names used by different splat library versions
-                const SplatEngine = window.Splat || window.SPLAT || window.splat;
-                
-                if (SplatEngine) {
+                if (window.GaussianSplats3D) {
                     try {
-                        new SplatEngine.Viewer({
-                            target: viewerTarget,
-                            url: model.splatUrl,
-                            camera: { position: [0, 1.2, 2.5], target: [0, 0, 0] }
+                        currentSplatViewer = new GaussianSplats3D.Viewer({
+                            'rootElement': viewerTarget,
+                            'cameraUp': [0, 1, 0],
+                            'initialCameraPosition': [0, 1.2, 2.5],
+                            'initialCameraLookAt': [0, 0, 0],
+                            'sharedMemoryForWorkers': false // Ensures broad browser compatibility
                         });
-                        console.log("SUCCESS: 3D Splat Viewer initialized.");
+                        
+                        currentSplatViewer.addSplatScene(model.splatUrl, {
+                            'showLoadingUI': false
+                        }).then(() => {
+                            currentSplatViewer.start();
+                            console.log("SUCCESS: 3D Splat Viewer initialized.");
+                        });
                     } catch (err) {
-                        console.error("CRITICAL: The 3D Viewer crashed while reading the .splat file. Error details:", err);
+                        console.error("CRITICAL: The 3D Viewer crashed.", err);
                     }
                 } else {
                     console.error("CRITICAL: The WebGL Splat script failed to load from the CDN.");
@@ -260,7 +262,16 @@
 
         function closeModal(event) {
             if (event && event.target.className === 'modal-content') return;
+            
             document.getElementById('assetModal').style.display = 'none';
+            
+            // Clean up the WebGL context properly so the browser doesn't crash on reopen
+            if (currentSplatViewer) {
+                try {
+                    currentSplatViewer.dispose();
+                } catch(e) {}
+                currentSplatViewer = null;
+            }
             document.getElementById('modalViewerTarget').innerHTML = ''; 
         }
     </script>
