@@ -53,19 +53,11 @@
         .card-title { font-size: 1.15rem; margin-bottom: 0.5rem; }
         .card-price { font-size: 1.1rem; color: #4ade80; font-weight: bold; margin-bottom: 1.2rem; }
 
-        .buy-btn {
-            margin-top: auto;
-            display: block;
-            text-align: center;
-            padding: 0.8rem;
-            background: var(--accent);
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: background 0.2s;
+        .rzp-button-container {
+            margin-top: auto; 
+            text-align: center; 
+            min-height: 45px;
         }
-        .buy-btn:hover { background: #2563eb; }
     </style>
     <!-- Lightweight WebGL Splat Viewer Engine -->
     <script src="https://cdn.jsdelivr.net/npm/@antimatter15/splat@0.0.3/dist/splat.js"></script>
@@ -98,7 +90,7 @@
                     card.className = 'card';
                     const viewerId = `splat-view-${model.id}`;
                     
-                    // Build the card HTML without the button first
+                    // Build the card HTML
                     card.innerHTML = `
                         <div class="viewer-container" id="${viewerId}">
                             ${!model.splatUrl ? `<img src="${model.thumbnail}" alt="${model.title}" style="max-width:100%; max-height:100%; object-fit:contain;">` : ''}
@@ -106,14 +98,14 @@
                         <div class="card-content" id="content-${model.id}">
                             <h2 class="card-title">${model.title}</h2>
                             <div class="card-price">${model.price}</div>
-                            <div class="rzp-button-container" style="margin-top: auto; text-align: center; min-height: 45px;"></div>
+                            <div class="rzp-button-container" id="rzp-btn-${model.id}"></div>
                         </div>
                     `;
                     grid.appendChild(card);
 
-                    // Dynamically inject the Razorpay script so the browser executes it
-                    const btnContainer = card.querySelector('.rzp-button-container');
-                    const targetId = model.buttonId || model.buyUrl; // Fallback support
+                    // Dynamically inject the exact Razorpay Button snippet
+                    const btnContainer = document.getElementById(`rzp-btn-${model.id}`);
+                    const targetId = model.buttonId;
 
                     if (targetId && targetId.startsWith('pl_')) {
                         const form = document.createElement('form');
@@ -123,9 +115,8 @@
                         script.async = true;
                         form.appendChild(script);
                         btnContainer.appendChild(form);
-                    } else if (targetId) {
-                        // Fallback just in case an old normal link is still in the database
-                        btnContainer.innerHTML = `<a href="${targetId}" class="buy-btn" target="_blank" rel="noopener noreferrer">Buy Now</a>`;
+                    } else {
+                        btnContainer.innerHTML = '<span style="color: #f87171; font-size: 0.9rem;">Payment unavailable</span>';
                     }
 
                     // Initialize WebGL Splat viewer for this card
