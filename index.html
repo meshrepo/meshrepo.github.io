@@ -190,12 +190,10 @@
                     
                     card.onclick = () => openModal(index);
 
-                    // Fixed SVG format (uses single quotes to prevent breaking the HTML attribute)
-                    const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%' viewBox='0 0 24 24' fill='none' stroke='%233f3f46' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2' ry='2'></rect><circle cx='8.5' cy='8.5' r='1.5'></circle><polyline points='21 15 16 10 5 21'></polyline></svg>`;
-
+                    // Simplified fallback: if image 404s, it hides the broken icon cleanly
                     card.innerHTML = `
                         <div class="card-img-container">
-                            <img src="${model.thumbnail}" class="card-img" alt="${model.title}" onerror="this.src='${fallbackSvg}'; this.style.objectFit='none';">
+                            <img src="${model.thumbnail}" class="card-img" alt="${model.title}" onerror="this.style.display='none';">
                         </div>
                         <div class="card-content">
                             <h2 class="card-title">${model.title}</h2>
@@ -239,7 +237,7 @@
                 btnContainer.innerHTML = '<span style="color: #f87171;">Payment unavailable</span>';
             }
 
-            // SHOW MODAL FIRST (Critical fix: allows the 3D canvas to calculate its size)
+            // SHOW MODAL FIRST (Allows the 3D canvas to calculate its size)
             document.getElementById('assetModal').style.display = 'flex';
 
             // THEN INITIALIZE 3D VIEWER
