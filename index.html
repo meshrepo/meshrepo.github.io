@@ -14,9 +14,32 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         body { background: var(--bg); color: var(--text); padding: 2rem; }
-        header { text-align: center; margin-bottom: 3rem; }
+        header { text-align: center; margin-bottom: 2rem; }
         h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
         p.subtitle { color: #a1a1aa; }
+
+        /* SEARCH BAR STYLING */
+        .search-container {
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            display: flex;
+            justify-content: center;
+        }
+        .search-bar {
+            width: 100%;
+            max-width: 500px;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
 
         .grid {
             display: grid;
@@ -168,8 +191,12 @@
 
     <header>
         <h1>Mesh Repository</h1>
-        <p class="subtitle">Interactive 3D Viewport. Polygons unlocked upon purchase.</p>
+        <p class="subtitle">Usable 3D assets.</p>
     </header>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search models...">
+    </div>
 
     <div class="grid" id="catalogGrid"></div>
 
@@ -192,51 +219,94 @@
 
     <script>
         let currentModels = [];
+        let filteredModels = [];
+        let searchTimeout = null;
+
+        function renderGrid(modelsToDisplay) {
+            const grid = document.getElementById('catalogGrid');
+            grid.innerHTML = '';
+
+            if (!Array.isArray(modelsToDisplay) || modelsToDisplay.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: #a1a1aa;">No models found.</p>';
+                return;
+            }
+
+            modelsToDisplay.forEach((model) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openModal(model.id);
+
+                const rawPrice = model.price || '0';
+                const formattedPrice = rawPrice.toString().includes('₹') ? rawPrice : '₹' + rawPrice;
+
+                card.innerHTML = `
+                    <div class="card-img-container">
+                        <img src="${model.thumbnail}" class="card-img" alt="${model.title}">
+                    </div>
+                    <div class="card-content">
+                        <h2 class="card-title">${model.title}</h2>
+                        <div class="card-price">${formattedPrice}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
 
         fetch('models.json?v=' + Date.now())
             .then(res => res.json())
             .then(data => {
-                const grid = document.getElementById('catalogGrid');
-                grid.innerHTML = '';
-
                 currentModels = Array.isArray(data) ? data : (data.models || data.items || []);
-
-                if (!Array.isArray(currentModels) || currentModels.length === 0) {
-                    grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: #a1a1aa;">No models found in catalog.</p>';
-                    return;
-                }
-
-                currentModels.forEach((model, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.onclick = () => openModal(index);
-
-                    // Smart Price Formatter for the Grid Cards
-                    const rawPrice = model.price || '0';
-                    const formattedPrice = rawPrice.toString().includes('₹') ? rawPrice : '₹' + rawPrice;
-
-                    card.innerHTML = `
-                        <div class="card-img-container">
-                            <img src="${model.thumbnail}" class="card-img" alt="${model.title}">
-                        </div>
-                        <div class="card-content">
-                            <h2 class="card-title">${model.title}</h2>
-                            <div class="card-price">${formattedPrice}</div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
+                filteredModels = currentModels;
+                renderGrid(filteredModels);
             })
             .catch(err => {
                 console.error("Catalog error:", err);
                 document.getElementById('catalogGrid').innerHTML = '<p style="text-align:center; color:#f87171; grid-column: 1/-1;">Error loading storefront catalog.</p>';
             });
 
-        function openModal(index) {
-            const model = currentModels[index];
+        // Search and Silent Logger
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            // 1. Instant local filter
+            if (searchTerm === '') {
+                filteredModels = currentModels;
+            } else {
+                filteredModels = currentModels.filter(model => 
+                    model.title.toLowerCase().includes(searchTerm)
+                );
+            }
+            renderGrid(filteredModels);
+
+            // 2. Debounced background logger to Google Sheets
+            clearTimeout(searchTimeout);
+            if (searchTerm !== '') {
+                searchTimeout = setTimeout(() => {
+                    const formId = '1FAIpQLSccc6ljCocc1C_NcK-AqKehnegjE3yPSI2X1aSCLOq50SMHVg';
+                    const entryId = 'entry.1425735990';
+
+                    if (formId === 'YOUR_FORM_ID_HERE') return;
+
+                    const googleFormUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
+                    
+                    fetch(googleFormUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            [entryId]: searchTerm
+                        })
+                    }).catch(err => console.error('Search log error:', err));
+                }, 1500);
+            }
+        });
+
+        function openModal(modelId) {
+            const model = currentModels.find(m => m.id === modelId);
             if (!model) return;
 
-            // Smart Price Formatter for the Modal
             const rawPrice = model.price || '0';
             const formattedPrice = rawPrice.toString().includes('₹') ? rawPrice : '₹' + rawPrice;
 
@@ -244,7 +314,6 @@
             document.getElementById('modalPrice').innerText = formattedPrice;
 
             const viewerTarget = document.getElementById('modalViewerTarget');
-            
             viewerTarget.innerHTML = `
                 <div class="modal-thumbnail-float">
                     <img src="${model.thumbnail}" alt="${model.title} Thumbnail">
@@ -275,7 +344,6 @@
 
         function closeModal(event) {
             if (event && event.target.className === 'modal-content') return;
-            
             document.getElementById('assetModal').style.display = 'none';
             document.getElementById('modalViewerTarget').innerHTML = ''; 
         }
