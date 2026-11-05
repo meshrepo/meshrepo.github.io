@@ -74,8 +74,8 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             width: 100%;
-            max-width: 1000px; /* Reduced for a tighter, window-like feel */
-            height: 75vh;      /* Takes up 75% of the screen height instead of 90% */
+            max-width: 1000px; 
+            height: 75vh;      
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -109,7 +109,7 @@
             position: absolute;
             top: 20px; 
             left: 20px;
-            width: 200px; /* Scaled down to match the smaller modal */
+            width: 200px; 
             background: #000;
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -211,13 +211,17 @@
                     card.className = 'card';
                     card.onclick = () => openModal(index);
 
+                    // Smart Price Formatter for the Grid Cards
+                    const rawPrice = model.price || '0';
+                    const formattedPrice = rawPrice.toString().includes('₹') ? rawPrice : '₹' + rawPrice;
+
                     card.innerHTML = `
                         <div class="card-img-container">
                             <img src="${model.thumbnail}" class="card-img" alt="${model.title}">
                         </div>
                         <div class="card-content">
                             <h2 class="card-title">${model.title}</h2>
-                            <div class="card-price">${model.price}</div>
+                            <div class="card-price">${formattedPrice}</div>
                         </div>
                     `;
                     grid.appendChild(card);
@@ -232,8 +236,12 @@
             const model = currentModels[index];
             if (!model) return;
 
+            // Smart Price Formatter for the Modal
+            const rawPrice = model.price || '0';
+            const formattedPrice = rawPrice.toString().includes('₹') ? rawPrice : '₹' + rawPrice;
+
             document.getElementById('modalTitle').innerText = model.title;
-            document.getElementById('modalPrice').innerText = model.price;
+            document.getElementById('modalPrice').innerText = formattedPrice;
 
             const viewerTarget = document.getElementById('modalViewerTarget');
             
@@ -261,7 +269,6 @@
             document.getElementById('assetModal').style.display = 'flex';
 
             if (model.glbUrl) {
-                // interaction-prompt-threshold="0" triggers the hand icon instantly
                 viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" alt="${model.title}" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" tone-mapping="neutral" interaction-prompt-threshold="0"></model-viewer>`;
             }
         }
