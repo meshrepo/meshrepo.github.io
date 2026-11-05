@@ -1,10 +1,10 @@
 [
   {
     "id": "model_123",
-    "title": "4-Burner Gas Stove",
-    "price": "₹49",
-    "thumbnail": "thumbnails/gas_stove_preview.png",
+    "title": "Easy Chair",
+    "price": "29",
+    "thumbnail": "thumbnails/Easy Chair.png",
     "buttonId": "pl_Tv2SsIo7ZLe9QB",
-    "glbUrl": "glb/4 Burner Gas Stove.glb"
+    "glbUrl": "glb/Easy Chair.glb"
   }
 ]
