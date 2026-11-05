@@ -57,7 +57,7 @@
         .card-title { font-size: 1.15rem; margin-bottom: 0.5rem; }
         .card-price { font-size: 1.1rem; color: #4ade80; font-weight: bold; }
 
-        /* MODAL OVERLAY */
+        /* EXPANDED MODAL OVERLAY */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -66,7 +66,7 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
+            padding: 2rem;
             backdrop-filter: blur(4px);
         }
         .modal-content {
@@ -74,7 +74,8 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             width: 100%;
-            max-width: 800px;
+            max-width: 1400px;
+            height: 90vh; /* Pushes the modal to take up 90% of the screen height */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -91,26 +92,36 @@
             border-radius: 50%;
             width: 36px; height: 36px;
             cursor: pointer;
-            z-index: 10;
+            z-index: 20;
             display: flex; align-items: center; justify-content: center;
         }
         .close-btn:hover { background: #ef4444; }
 
+        /* EXPANDED 3D VIEWER CONTAINER */
         .modal-viewer {
             width: 100%;
-            height: 400px;
-            background: #000;
+            flex-grow: 1; /* Tells the viewer to consume all remaining space */
+            background: #18181b; /* Dark gray background */
             position: relative;
         }
         
-        /* Fallback Thumbnail Image */
-        .modal-fallback-img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        /* FLOATING THUMBNAIL OVERLAY */
+        .modal-thumbnail-float {
             position: absolute;
-            top: 0; left: 0;
-            z-index: 1;
+            top: 20px; 
+            left: 20px;
+            width: 280px; /* A bit large */
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            z-index: 10; /* Ensures it floats above the 3D model */
+            overflow: hidden;
+        }
+        .modal-thumbnail-float img {
+            width: 100%;
+            display: block;
+            object-fit: cover;
         }
 
         /* GLB Model Viewer Styling */
@@ -121,24 +132,33 @@
             top: 0; left: 0;
             z-index: 6;
             outline: none;
-            background-color: transparent;
+            background-color: transparent; /* Lets the dark gray show through */
         }
 
         .modal-info {
-            padding: 1.5rem;
+            padding: 1.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
+            background: var(--card); /* Distinguishes the bottom bar from the canvas */
+            border-top: 1px solid var(--border);
         }
         .modal-text h2 { font-size: 1.5rem; margin-bottom: 0.3rem; }
         .modal-text .price { font-size: 1.3rem; color: #4ade80; font-weight: bold; }
         .modal-buy-container { min-width: 160px; text-align: right; }
 
-        @media (max-width: 600px) {
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            .modal-overlay { padding: 0.5rem; }
+            .modal-content { height: 95vh; }
+            .modal-thumbnail-float { 
+                width: 120px; /* Shrinks thumbnail so it doesn't block the screen on phones */
+                top: 10px; 
+                left: 10px; 
+            }
             .modal-info { flex-direction: column; text-align: center; }
             .modal-buy-container { text-align: center; width: 100%; margin-top: 1rem; }
-            .modal-viewer { height: 300px; }
         }
     </style>
     
@@ -217,7 +237,13 @@
             document.getElementById('modalPrice').innerText = model.price;
 
             const viewerTarget = document.getElementById('modalViewerTarget');
-            viewerTarget.innerHTML = `<img src="${model.thumbnail}" class="modal-fallback-img" alt="${model.title}">`;
+            
+            // Injects the floating thumbnail overlay
+            viewerTarget.innerHTML = `
+                <div class="modal-thumbnail-float">
+                    <img src="${model.thumbnail}" alt="${model.title} Thumbnail">
+                </div>
+            `;
 
             const btnContainer = document.getElementById('modalBuyBtn');
             btnContainer.innerHTML = ''; 
@@ -237,7 +263,6 @@
             document.getElementById('assetModal').style.display = 'flex';
 
             if (model.glbUrl) {
-                // Switched to neutral tone mapping and default lighting environment to preserve dark details
                 viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" alt="${model.title}" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" tone-mapping="neutral"></model-viewer>`;
             }
         }
