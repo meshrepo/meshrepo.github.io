@@ -57,7 +57,7 @@
         .card-title { font-size: 1.15rem; margin-bottom: 0.5rem; }
         .card-price { font-size: 1.1rem; color: #4ade80; font-weight: bold; }
 
-        /* EXPANDED MODAL OVERLAY */
+        /* CONTAINED MODAL OVERLAY */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -74,8 +74,8 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             width: 100%;
-            max-width: 1400px;
-            height: 90vh; /* Pushes the modal to take up 90% of the screen height */
+            max-width: 1000px; /* Reduced for a tighter, window-like feel */
+            height: 75vh;      /* Takes up 75% of the screen height instead of 90% */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -97,11 +97,10 @@
         }
         .close-btn:hover { background: #ef4444; }
 
-        /* EXPANDED 3D VIEWER CONTAINER */
         .modal-viewer {
             width: 100%;
-            flex-grow: 1; /* Tells the viewer to consume all remaining space */
-            background: #18181b; /* Dark gray background */
+            flex-grow: 1; 
+            background: #18181b; 
             position: relative;
         }
         
@@ -110,12 +109,12 @@
             position: absolute;
             top: 20px; 
             left: 20px;
-            width: 280px; /* A bit large */
+            width: 200px; /* Scaled down to match the smaller modal */
             background: #000;
             border: 1px solid var(--border);
             border-radius: 8px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-            z-index: 10; /* Ensures it floats above the 3D model */
+            z-index: 10; 
             overflow: hidden;
         }
         .modal-thumbnail-float img {
@@ -132,7 +131,7 @@
             top: 0; left: 0;
             z-index: 6;
             outline: none;
-            background-color: transparent; /* Lets the dark gray show through */
+            background-color: transparent; 
         }
 
         .modal-info {
@@ -141,7 +140,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
-            background: var(--card); /* Distinguishes the bottom bar from the canvas */
+            background: var(--card);
             border-top: 1px solid var(--border);
         }
         .modal-text h2 { font-size: 1.5rem; margin-bottom: 0.3rem; }
@@ -151,9 +150,9 @@
         /* MOBILE RESPONSIVENESS */
         @media (max-width: 768px) {
             .modal-overlay { padding: 0.5rem; }
-            .modal-content { height: 95vh; }
+            .modal-content { height: 85vh; }
             .modal-thumbnail-float { 
-                width: 120px; /* Shrinks thumbnail so it doesn't block the screen on phones */
+                width: 120px; 
                 top: 10px; 
                 left: 10px; 
             }
@@ -238,7 +237,6 @@
 
             const viewerTarget = document.getElementById('modalViewerTarget');
             
-            // Injects the floating thumbnail overlay
             viewerTarget.innerHTML = `
                 <div class="modal-thumbnail-float">
                     <img src="${model.thumbnail}" alt="${model.title} Thumbnail">
@@ -263,7 +261,8 @@
             document.getElementById('assetModal').style.display = 'flex';
 
             if (model.glbUrl) {
-                viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" alt="${model.title}" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" tone-mapping="neutral"></model-viewer>`;
+                // interaction-prompt-threshold="0" triggers the hand icon instantly
+                viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" alt="${model.title}" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" tone-mapping="neutral" interaction-prompt-threshold="0"></model-viewer>`;
             }
         }
 
