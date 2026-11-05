@@ -102,6 +102,18 @@
             background: #000;
             position: relative;
         }
+        
+        /* Fallback Thumbnail Image */
+        .modal-fallback-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+
+        /* Gaussian Splat Canvas */
         .modal-viewer canvas {
             position: absolute !important;
             top: 0; left: 0;
@@ -111,13 +123,16 @@
             outline: none;
             z-index: 5 !important; 
         }
-        .modal-fallback-img {
+
+        /* GLB Model Viewer Styling */
+        model-viewer {
             width: 100%;
             height: 100%;
-            object-fit: contain;
             position: absolute;
             top: 0; left: 0;
-            z-index: 1;
+            z-index: 6;
+            outline: none;
+            background-color: transparent;
         }
 
         .modal-info {
@@ -138,7 +153,10 @@
         }
     </style>
     
-    <!-- Modern ES Module Configuration -->
+    <!-- GLB Engine (Google Model-Viewer) -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+    <!-- Splat Engine (Legacy Support) -->
     <script type="importmap">
     {
         "imports": {
@@ -150,8 +168,6 @@
     <script type="module">
         import * as THREE from 'three';
         import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
-        
-        // Expose the loaded modules to the global window so our modal script can use them
         window.THREE = THREE;
         window.GaussianSplats3D = GaussianSplats3D;
     </script>
@@ -248,8 +264,13 @@
 
             document.getElementById('assetModal').style.display = 'flex';
 
-            if (model.splatUrl) {
-                // We use a small timeout to ensure the ES Modules have finished attaching to the window
+            // PRIORITIZE GLB IF AVAILABLE
+            if (model.glbUrl) {
+                viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" camera-controls auto-rotate shadow-intensity="1" exposure="1.2"></model-viewer>`;
+                console.log("SUCCESS: GLB Model initialized.");
+            } 
+            // FALLBACK TO SPLAT IF NO GLB EXISTS
+            else if (model.splatUrl) {
                 setTimeout(() => {
                     if (window.GaussianSplats3D) {
                         try {
@@ -258,20 +279,19 @@
                                 'cameraUp': [0, 1, 0],
                                 'initialCameraPosition': [0, 1.2, 2.5],
                                 'initialCameraLookAt': [0, 0, 0],
-                                'sharedMemoryForWorkers': false 
+                                'sharedMemoryForWorkers': false,
+                                'antialiased': true
                             });
                             
                             currentSplatViewer.addSplatScene(model.splatUrl, {
-                                'showLoadingUI': true // Temporarily set to true so you can see it downloading
+                                'showLoadingUI': true
                             }).then(() => {
                                 currentSplatViewer.start();
-                                console.log("SUCCESS: 3D Splat Viewer initialized.");
+                                console.log("SUCCESS: Splat Viewer initialized.");
                             });
                         } catch (err) {
                             console.error("CRITICAL: The 3D Viewer crashed.", err);
                         }
-                    } else {
-                        console.error("CRITICAL: The WebGL Splat script failed to load. Check if Three.js is loaded correctly.");
                     }
                 }, 100);
             }
