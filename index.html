@@ -237,7 +237,7 @@
             document.getElementById('assetModal').style.display = 'flex';
 
             if (model.glbUrl) {
-                viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" alt="${model.title}" camera-controls auto-rotate shadow-intensity="1" exposure="1.2"></model-viewer>`;
+                viewerTarget.innerHTML += `<model-viewer src="${model.glbUrl}" alt="${model.title}" camera-controls auto-rotate shadow-intensity="2" shadow-softness="0.5" tone-mapping="aces" exposure="1.1" environment-image="legacy"></model-viewer>`;
             }
         }
 
